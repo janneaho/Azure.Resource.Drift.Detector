@@ -1,0 +1,63 @@
+# VS Code
+.vscode/
+*.code-workspace
+
+# Mac
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+.claude/
+
+# .NET
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+*.user
+*.suo
+*.cache
+*.log
+*.nupkg
+*.snupkg
+project.lock.json
+*.nuget.props
+*.nuget.targets
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+build/
+out/
+
+# NuGet
+packages/
+*.nuget.g.props
+*.nuget.g.targets
+
+# User-specific files
+*.rsuser
+*.userprefs
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# Visual Studio
+.vs/
+*.csproj.user
+
+# Test results
+TestResults/
+coverage/
+*.trx
+
+# Markdown (except README)
+*.md
+!README.md
