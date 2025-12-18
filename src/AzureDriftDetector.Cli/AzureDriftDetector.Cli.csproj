@@ -9,6 +9,18 @@
     <AssemblyName>azure-drift-detector</AssemblyName>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>azure-drift-detector</ToolCommandName>
+
+    <!-- NuGet Package Metadata -->
+    <PackageId>azure-drift-detector</PackageId>
+    <Title>Azure Resource Drift Detector</Title>
+    <Description>CLI tool for detecting configuration drift in Azure resources by comparing deployed state against Infrastructure as Code templates (ARM/Bicep).</Description>
+    <Authors>janneaho</Authors>
+    <PackageTags>azure;drift;iac;arm;bicep;devops;infrastructure</PackageTags>
+    <PackageProjectUrl>https://github.com/janneaho/Azure.Resource.Drift.Detector</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/janneaho/Azure.Resource.Drift.Detector</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,6 +32,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AzureDriftDetector.Core\AzureDriftDetector.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>
