@@ -28,7 +28,7 @@ dotnet tool install --global azure-drift-detector
 ### From Source
 
 ```bash
-git clone https://github.com/your-org/azure-drift-detector.git
+git clone https://github.com/janneaho/azure-drift-detector.git
 cd azure-drift-detector
 dotnet build
 dotnet pack src/AzureDriftDetector.Cli -c Release
