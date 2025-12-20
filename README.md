@@ -296,35 +296,45 @@ For CI/CD, we recommend using a Service Principal or Managed Identity with the f
 
 ### Console Output
 
+The CLI uses [Spectre.Console](https://spectreconsole.net/) for rich, colorful terminal output:
+
 ```
-Azure Resource Drift Report
-══════════════════════════════════════════════════
+╔══════════════════════════════════════╗
+║   Azure Resource Drift Report        ║
+╚══════════════════════════════════════╝
 
-Template:      ./infra/main.bicep
-Subscription:  12345678-1234-1234-1234-123456789abc
-Resource Group:my-production-rg
-Generated:     2024-01-15 10:30:00 UTC
+Template:        ./infra/main.bicep
+Subscription:    12345678-1234-1234-1234-123456789abc
+Resource Group:  my-production-rg
+Generated:       2024-01-15 10:30:00 UTC
 
-Summary
-──────────────────────────────
-Total Resources: 5
-  ✓ In Sync:   3
-  ✗ Drifted:   1
-  ⚠ Missing:   1
-  ? Unmanaged: 0
+                    Summary
+╭──────────────────┬───────╮
+│      Status      │ Count │
+├──────────────────┼───────┤
+│ ✓ In Sync        │   3   │
+│ ✗ Drifted        │   1   │
+│ ⚠ Missing        │   1   │
+│ ? Unmanaged      │   0   │
+╰──────────────────┴───────╯
 
-Drift Details
-──────────────────────────────
+─── Drift Details ─────────────────────────────────
 
-✗ my-storage-account (Microsoft.Storage/storageAccounts)
-  Status: DRIFTED
-  ~ properties.supportsHttpsTrafficOnly
-    Expected: true
-    Actual:   false
+╭─ ✗ DRIFTED ──────────────────────────────────────╮
+│ my-storage-account                               │
+│ Microsoft.Storage/storageAccounts                │
+╰──────────────────────────────────────────────────╯
+ Type     │ Property                      │ Expected │ Actual
+──────────┼───────────────────────────────┼──────────┼────────
+ ~ Modified│ properties.supportsHttpsOnly │ true     │ false
 
-⚠ my-app-insights (Microsoft.Insights/components)
-  Status: MISSING
+╭─ ⚠ MISSING ──────────────────────────────────────╮
+│ my-app-insights                                  │
+│ Microsoft.Insights/components                    │
+╰──────────────────────────────────────────────────╯
 ```
+
+> **Note**: Colors are displayed in terminals that support ANSI colors. Green for in-sync/expected values, red for drifted/actual values, yellow for missing resources.
 
 ## Contributing
 
@@ -361,3 +371,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Built with [Azure SDK for .NET](https://github.com/Azure/azure-sdk-for-net)
 - CLI powered by [System.CommandLine](https://github.com/dotnet/command-line-api)
+- Beautiful console output by [Spectre.Console](https://github.com/spectreconsole/spectre.console)
