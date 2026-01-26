@@ -10,66 +10,63 @@ public static class NotifyCommand
 {
     public static Command Create(IServiceProvider services)
     {
-        var templateOption = new Option<FileInfo>(
-            ["--template", "-t"],
-            "Path to Bicep or ARM template file")
+        var templateOption = new Option<FileInfo>("--template", "-t")
         {
-            IsRequired = true
+            Description = "Path to Bicep or ARM template file",
+            Required = true
         };
 
-        var subscriptionOption = new Option<string>(
-            ["--subscription", "-s"],
-            "Azure subscription ID")
+        var subscriptionOption = new Option<string>("--subscription", "-s")
         {
-            IsRequired = true
+            Description = "Azure subscription ID",
+            Required = true
         };
 
-        var resourceGroupOption = new Option<string>(
-            ["--resource-group", "-g"],
-            "Azure resource group name")
+        var resourceGroupOption = new Option<string>("--resource-group", "-g")
         {
-            IsRequired = true
+            Description = "Azure resource group name",
+            Required = true
         };
 
-        var slackWebhookOption = new Option<string?>(
-            "--slack-webhook",
-            () => Environment.GetEnvironmentVariable("SLACK_WEBHOOK_URL"),
-            "Slack webhook URL (or set SLACK_WEBHOOK_URL env var)");
-
-        var teamsWebhookOption = new Option<string?>(
-            "--teams-webhook",
-            () => Environment.GetEnvironmentVariable("TEAMS_WEBHOOK_URL"),
-            "Microsoft Teams webhook URL (or set TEAMS_WEBHOOK_URL env var)");
-
-        var onlyOnDriftOption = new Option<bool>(
-            "--only-on-drift",
-            () => false,
-            "Only send notification if drift is detected");
-
-        var command = new Command("notify", "Send drift report notifications to Slack/Teams")
+        var slackWebhookOption = new Option<string?>("--slack-webhook")
         {
-            templateOption,
-            subscriptionOption,
-            resourceGroupOption,
-            slackWebhookOption,
-            teamsWebhookOption,
-            onlyOnDriftOption
+            Description = "Slack webhook URL (or set SLACK_WEBHOOK_URL env var)",
+            DefaultValueFactory = _ => Environment.GetEnvironmentVariable("SLACK_WEBHOOK_URL")
         };
 
-        command.SetHandler(async (context) =>
+        var teamsWebhookOption = new Option<string?>("--teams-webhook")
         {
-            var template = context.ParseResult.GetValueForOption(templateOption)!;
-            var subscription = context.ParseResult.GetValueForOption(subscriptionOption)!;
-            var resourceGroup = context.ParseResult.GetValueForOption(resourceGroupOption)!;
-            var slackWebhook = context.ParseResult.GetValueForOption(slackWebhookOption);
-            var teamsWebhook = context.ParseResult.GetValueForOption(teamsWebhookOption);
-            var onlyOnDrift = context.ParseResult.GetValueForOption(onlyOnDriftOption);
+            Description = "Microsoft Teams webhook URL (or set TEAMS_WEBHOOK_URL env var)",
+            DefaultValueFactory = _ => Environment.GetEnvironmentVariable("TEAMS_WEBHOOK_URL")
+        };
+
+        var onlyOnDriftOption = new Option<bool>("--only-on-drift")
+        {
+            Description = "Only send notification if drift is detected",
+            DefaultValueFactory = _ => false
+        };
+
+        var command = new Command("notify", "Send drift report notifications to Slack/Teams");
+        command.Options.Add(templateOption);
+        command.Options.Add(subscriptionOption);
+        command.Options.Add(resourceGroupOption);
+        command.Options.Add(slackWebhookOption);
+        command.Options.Add(teamsWebhookOption);
+        command.Options.Add(onlyOnDriftOption);
+
+        command.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var template = parseResult.GetValue(templateOption)!;
+            var subscription = parseResult.GetValue(subscriptionOption)!;
+            var resourceGroup = parseResult.GetValue(resourceGroupOption)!;
+            var slackWebhook = parseResult.GetValue(slackWebhookOption);
+            var teamsWebhook = parseResult.GetValue(teamsWebhookOption);
+            var onlyOnDrift = parseResult.GetValue(onlyOnDriftOption);
 
             if (string.IsNullOrEmpty(slackWebhook) && string.IsNullOrEmpty(teamsWebhook))
             {
                 Console.Error.WriteLine("Error: At least one webhook URL is required (--slack-webhook or --teams-webhook)");
-                context.ExitCode = 1;
-                return;
+                return 1;
             }
 
             var detector = services.GetRequiredService<IDriftDetector>();
@@ -79,12 +76,12 @@ public static class NotifyCommand
                 template.FullName,
                 subscription,
                 resourceGroup,
-                cancellationToken: context.GetCancellationToken());
+                cancellationToken: cancellationToken);
 
             if (onlyOnDrift && !report.HasDrift)
             {
                 Console.WriteLine("No drift detected. Skipping notification.");
-                return;
+                return 0;
             }
 
             if (!string.IsNullOrEmpty(slackWebhook))
@@ -93,7 +90,7 @@ public static class NotifyCommand
                     slackWebhook,
                     loggerFactory.CreateLogger<SlackNotificationClient>());
 
-                await slackClient.SendNotificationAsync(report, context.GetCancellationToken());
+                await slackClient.SendNotificationAsync(report, cancellationToken);
                 Console.WriteLine("Sent notification to Slack");
             }
 
@@ -103,14 +100,16 @@ public static class NotifyCommand
                     teamsWebhook,
                     loggerFactory.CreateLogger<TeamsNotificationClient>());
 
-                await teamsClient.SendNotificationAsync(report, context.GetCancellationToken());
+                await teamsClient.SendNotificationAsync(report, cancellationToken);
                 Console.WriteLine("Sent notification to Microsoft Teams");
             }
 
             if (report.HasDrift)
             {
-                context.ExitCode = 1;
+                return 1;
             }
+
+            return 0;
         });
 
         return command;

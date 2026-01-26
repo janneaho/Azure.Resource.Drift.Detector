@@ -32,16 +32,17 @@ services.AddSingleton<IDriftDetector, DriftDetector>();
 
 var serviceProvider = services.BuildServiceProvider();
 
-var rootCommand = new RootCommand("Azure Resource Drift Detector - Know when reality diverges from your IaC")
+var verboseOption = new Option<bool>("--verbose", "-v")
 {
-    DetectCommand.Create(serviceProvider),
-    DevOpsCommand.Create(serviceProvider),
-    NotifyCommand.Create(serviceProvider),
-    InitCommand.Create()
+    Description = "Enable verbose output"
 };
 
-rootCommand.AddGlobalOption(new Option<bool>(
-    ["--verbose", "-v"],
-    "Enable verbose output"));
+var rootCommand = new RootCommand("Azure Resource Drift Detector - Know when reality diverges from your IaC");
+rootCommand.Subcommands.Add(DetectCommand.Create(serviceProvider));
+rootCommand.Subcommands.Add(DevOpsCommand.Create(serviceProvider));
+rootCommand.Subcommands.Add(NotifyCommand.Create(serviceProvider));
+rootCommand.Subcommands.Add(InitCommand.Create());
+rootCommand.Options.Add(verboseOption);
 
-return await rootCommand.InvokeAsync(args);
+var result = rootCommand.Parse(args);
+return await result.InvokeAsync();
