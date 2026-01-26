@@ -9,68 +9,65 @@ public static class DetectCommand
 {
     public static Command Create(IServiceProvider services)
     {
-        var templateOption = new Option<FileInfo>(
-            ["--template", "-t"],
-            "Path to Bicep or ARM template file")
+        var templateOption = new Option<FileInfo>("--template", "-t")
         {
-            IsRequired = true
+            Description = "Path to Bicep or ARM template file",
+            Required = true
         };
 
-        var subscriptionOption = new Option<string>(
-            ["--subscription", "-s"],
-            "Azure subscription ID")
+        var subscriptionOption = new Option<string>("--subscription", "-s")
         {
-            IsRequired = true
+            Description = "Azure subscription ID",
+            Required = true
         };
 
-        var resourceGroupOption = new Option<string>(
-            ["--resource-group", "-g"],
-            "Azure resource group name")
+        var resourceGroupOption = new Option<string>("--resource-group", "-g")
         {
-            IsRequired = true
+            Description = "Azure resource group name",
+            Required = true
         };
 
-        var outputFormatOption = new Option<OutputFormat>(
-            ["--output", "-o"],
-            () => OutputFormat.Console,
-            "Output format (console, json, markdown)");
-
-        var outputFileOption = new Option<FileInfo?>(
-            "--output-file",
-            "Write output to file instead of stdout");
-
-        var failOnDriftOption = new Option<bool>(
-            "--fail-on-drift",
-            () => false,
-            "Exit with non-zero code if drift is detected");
-
-        var parameterOption = new Option<string[]>(
-            ["--parameter", "-p"],
-            "Template parameters (key=value format)")
+        var outputFormatOption = new Option<OutputFormat>("--output", "-o")
         {
+            Description = "Output format (console, json, markdown)",
+            DefaultValueFactory = _ => OutputFormat.Console
+        };
+
+        var outputFileOption = new Option<FileInfo?>("--output-file")
+        {
+            Description = "Write output to file instead of stdout"
+        };
+
+        var failOnDriftOption = new Option<bool>("--fail-on-drift")
+        {
+            Description = "Exit with non-zero code if drift is detected",
+            DefaultValueFactory = _ => false
+        };
+
+        var parameterOption = new Option<string[]>("--parameter", "-p")
+        {
+            Description = "Template parameters (key=value format)",
             AllowMultipleArgumentsPerToken = true
         };
 
-        var command = new Command("detect", "Detect drift between template and Azure resources")
-        {
-            templateOption,
-            subscriptionOption,
-            resourceGroupOption,
-            outputFormatOption,
-            outputFileOption,
-            failOnDriftOption,
-            parameterOption
-        };
+        var command = new Command("detect", "Detect drift between template and Azure resources");
+        command.Options.Add(templateOption);
+        command.Options.Add(subscriptionOption);
+        command.Options.Add(resourceGroupOption);
+        command.Options.Add(outputFormatOption);
+        command.Options.Add(outputFileOption);
+        command.Options.Add(failOnDriftOption);
+        command.Options.Add(parameterOption);
 
-        command.SetHandler(async (context) =>
+        command.SetAction(async (parseResult, cancellationToken) =>
         {
-            var template = context.ParseResult.GetValueForOption(templateOption)!;
-            var subscription = context.ParseResult.GetValueForOption(subscriptionOption)!;
-            var resourceGroup = context.ParseResult.GetValueForOption(resourceGroupOption)!;
-            var outputFormat = context.ParseResult.GetValueForOption(outputFormatOption);
-            var outputFile = context.ParseResult.GetValueForOption(outputFileOption);
-            var failOnDrift = context.ParseResult.GetValueForOption(failOnDriftOption);
-            var parameters = context.ParseResult.GetValueForOption(parameterOption);
+            var template = parseResult.GetValue(templateOption)!;
+            var subscription = parseResult.GetValue(subscriptionOption)!;
+            var resourceGroup = parseResult.GetValue(resourceGroupOption)!;
+            var outputFormat = parseResult.GetValue(outputFormatOption);
+            var outputFile = parseResult.GetValue(outputFileOption);
+            var failOnDrift = parseResult.GetValue(failOnDriftOption);
+            var parameters = parseResult.GetValue(parameterOption);
 
             var detector = services.GetRequiredService<IDriftDetector>();
 
@@ -81,14 +78,14 @@ public static class DetectCommand
                 subscription,
                 resourceGroup,
                 paramDict,
-                context.GetCancellationToken());
+                cancellationToken);
 
             var formatter = ReportFormatterFactory.Create(outputFormat);
             var output = formatter.Format(report);
 
             if (outputFile != null)
             {
-                await File.WriteAllTextAsync(outputFile.FullName, output);
+                await File.WriteAllTextAsync(outputFile.FullName, output, cancellationToken);
                 Console.WriteLine($"Report written to: {outputFile.FullName}");
             }
             else
@@ -98,8 +95,10 @@ public static class DetectCommand
 
             if (failOnDrift && report.HasDrift)
             {
-                context.ExitCode = 1;
+                return 1;
             }
+
+            return 0;
         });
 
         return command;
